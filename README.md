@@ -18,7 +18,7 @@ The existing technical identifiers are intentionally retained for compatibility:
 
 - plugin directory: `wordfence-cloudflare-firewall-sync`;
 - main plugin file: `index.php`;
-- GitHub repository: `wordfence-cloudflare-firewall-sync`;
+- GitHub repository: `greyrock-wordfence-cloudflare-synchroniser`;
 - release ZIP: `greyrock-wordfence-cloudflare-synchroniser.zip`;
 - WordPress option names, hooks, database table names and text domain.
 
