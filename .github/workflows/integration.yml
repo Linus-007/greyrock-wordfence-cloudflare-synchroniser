@@ -1,0 +1,65 @@
+name: WordPress Integration
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wordpress-integration:
+    name: WordPress 7.0 integration test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Resolve plugin version
+        id: version
+        shell: bash
+        run: |
+          version="$(
+            sed -nE \
+              's/^[[:space:]]*\*[[:space:]]Version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*$/\1/p' \
+              src/grey-rock-block-synchroniser-for-wordfence-and-cloudflare.php |
+            head -n 1
+          )"
+
+          test -n "${version}"
+          echo "value=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build validated release ZIP
+        run: make release VERSION="${{ steps.version.outputs.value }}"
+
+      - name: Run disposable WordPress integration test
+        run: ./scripts/integration-test-ci.sh
+
+      - name: Publish integration summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f reports/integration-ci/summary.txt ]]; then
+            {
+              echo '## WordPress integration test'
+              echo
+              echo '```text'
+              cat reports/integration-ci/summary.txt
+              echo '```'
+            } >> "${GITHUB_STEP_SUMMARY}"
+          fi
